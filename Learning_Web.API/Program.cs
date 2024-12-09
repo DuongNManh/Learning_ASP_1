@@ -1,4 +1,6 @@
+using Learning_Web.API.Converters;
 using Learning_Web.API.Data;
+using Learning_Web.API.Reposotories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +14,12 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<WalkDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IRegionRepository, SQLRegionRepository>(); //Injecting the SQLRegionRepository
+// ...
+
+// Add services to the container.
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
 
 var app = builder.Build();
 
