@@ -3,8 +3,9 @@ using Learning_Web.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Learning_Web.API.Converters;
 using Learning_Web.API.Models.Response;
+using Microsoft.AspNetCore.Mvc;
 
-namespace Learning_Web.API.Reposotories
+namespace Learning_Web.API.Repositories
 {
     public class SQLRegionRepository : IRegionRepository
     {
@@ -35,9 +36,37 @@ namespace Learning_Web.API.Reposotories
             return region;
         }
 
-        public async Task<IEnumerable<Region>> GetAllAsync()
+        public async Task<IEnumerable<Region>> GetAllAsync(string? filterOn,string? filterQuery,
+            string? sortBy, bool? isAscending)
         {
-            return await _dbContext.Regions.ToListAsync();
+            var query = await _dbContext.Regions.ToListAsync();
+            // filter the query
+            if (!string.IsNullOrWhiteSpace(filterOn) && !string.IsNullOrWhiteSpace(filterQuery))
+            {
+                // filter the query on Name
+                if (filterOn.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(x => x.Name.Contains(filterQuery)).ToList();
+                }
+                // filter the query on Code
+                else if (filterOn.Equals("Code", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(x => x.Code.Contains(filterQuery)).ToList();
+                }
+            }
+            // sort the query
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                if (sortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = isAscending == true ? query.OrderBy(x => x.Name).ToList() : query.OrderByDescending(x => x.Name).ToList();
+                }
+                else if (sortBy.Equals("Code", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = isAscending == true ? query.OrderBy(x => x.Code).ToList() : query.OrderByDescending(x => x.Code).ToList();
+                }
+            }
+            return query;
         }
 
         public async Task<Region?> GetByIdAsync(Guid id)

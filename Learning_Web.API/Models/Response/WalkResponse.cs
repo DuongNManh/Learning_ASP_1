@@ -15,15 +15,14 @@ namespace Learning_Web.API.Models.Response
         public string? WalkImageUrl { get; set; }
         [JsonPropertyName("length_in_km")]
         public double LengthInKm { get; set; }
-        [JsonPropertyName("difficulty")]
-        public Guid DifficultyId { get; set; }
-        [JsonPropertyName("region")]
-        public Guid RegionId { get; set; }
+
         // Navigation property
         [JsonPropertyName("difficulty")]
         public DifficultyResponse Difficulty { get; set; }
+
         // Navigation property
         [JsonPropertyName("region")]
         public RegionResponse Region { get; set; }
+
     }
 }

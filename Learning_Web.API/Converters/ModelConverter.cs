@@ -34,8 +34,6 @@ namespace Learning_Web.API.Converters
                 Description = walk.Description,
                 WalkImageUrl = walk.WalkImageUrl,
                 LengthInKm = walk.LengthInKm,
-                Difficulty = Convert(walk.Difficulty), // Fixed the error here
-                Region = Convert(walk.Region) // Fixed the error here
             };
         }
     }

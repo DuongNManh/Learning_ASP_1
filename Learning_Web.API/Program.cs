@@ -1,6 +1,6 @@
 using Learning_Web.API.Converters;
 using Learning_Web.API.Data;
-using Learning_Web.API.Reposotories;
+using Learning_Web.API.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +16,7 @@ builder.Services.AddDbContext<WalkDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IRegionRepository, SQLRegionRepository>(); //Injecting the SQLRegionRepository
+builder.Services.AddScoped<IWalkRepository, SQLWalkRepository>(); //Injecting the SQLWalkRepository
 // ...
 
 // Add services to the container.
