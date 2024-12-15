@@ -9,32 +9,34 @@ using Learning_Web.API.Models.DTO;
 using Learning_Web.API.Repositories;
 using AutoMapper;
 using Learning_Web.API.CustomActionFilters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Learning_Web.API.Controllers
 {
     // https://localhost:5001/api/regions
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class RegionsController : ControllerBase
     {
-        private readonly WalkDBContext _dbContext;
         private readonly IRegionRepository regionRepository;
         private readonly IMapper mapper;
 
-        public RegionsController(WalkDBContext walkDBContext, IRegionRepository regionRepository
+        public RegionsController(IRegionRepository regionRepository
             ,IMapper mapper)
         {
-            this._dbContext = walkDBContext;
             this.regionRepository = regionRepository;
             this.mapper = mapper;
         }
 
-        [HttpGet] // GET: https://localhost:5001/api/regions?filterOn=Name&filterQuery=Track
-        public async Task<IActionResult> GetAllRegions([FromQuery] string? filterOn,
-            [FromQuery] string? filterQuery, [FromQuery] string? sortBy,[FromQuery] bool? isAscending)
+        [HttpGet] // GET: https://localhost:5001/api/regions?filterOn=Name&filterQuery=Track&sortBy=Name&isAscending=true&pageSize=10&pageNumber=1
+        public async Task<IActionResult> GetAllRegions(
+            [FromQuery] string? filterOn, [FromQuery] string? filterQuery,
+            [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
+            [FromQuery] int pageSize = 50, [FromQuery] int pageNumber = 1)
         {
             // Get all regions
-            var regions = await regionRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true);
+            var regions = await regionRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true, pageNumber, pageSize);
 
             // Convert each Region to RegionResponse
             var regionResponses = mapper.Map<IEnumerable<RegionResponse>>(regions);
@@ -42,7 +44,7 @@ namespace Learning_Web.API.Controllers
             return Ok(regionResponses);
         }
 
-        [HttpGet] // GET: https://localhost:5001/api/regions/1
+        [HttpGet] 
         [Route("{id:guid}")] //only if the id is a guid, the request will be performed
         public async Task<IActionResult> GetRegion(Guid id)
         {
@@ -59,10 +61,16 @@ namespace Learning_Web.API.Controllers
             return Ok(mapper.Map<RegionResponse>(region));
         }
 
-        [HttpPost] // POST: https://localhost:5001/api/regions
+        [HttpPost]
         [ValidateModelAttributes] // Custom Action Filter for Model Validation
         public async Task<IActionResult> CreateRegion([FromBody] RegionDTO newRegion)
         {
+            // validate the DTO
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid data");
+            }
+
             //Convert the RegionDTO to a Region
             var regionToCreate = mapper.Map<Region>(newRegion);
 
@@ -73,11 +81,17 @@ namespace Learning_Web.API.Controllers
             return CreatedAtAction(nameof(GetRegion), new { id = regionToCreate.Id }, mapper.Map<RegionResponse>(createdRegion));
         }
 
-        [HttpPut] // PUT: https://localhost:5001/api/regions/1
-        [Route("{id:guid}")] //only if the id is a guid, the request will be performed
-        [ValidateModelAttributes] // Custom Action Filter for Model Validation
+        [HttpPut] 
+        [Route("{id:guid}")]
+        [ValidateModelAttributes]
         public async Task<IActionResult> UpdateRegion(Guid id, [FromBody] RegionDTO updateRegion)
         {
+            // validate the DTO
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid data");
+            }
+
             var regionToUpdate = await regionRepository.UpdateAsync(id, mapper.Map<Region>(updateRegion));
 
             if (regionToUpdate == null)
@@ -88,8 +102,8 @@ namespace Learning_Web.API.Controllers
             return Ok(mapper.Map<RegionResponse>(regionToUpdate));
         }
 
-        [HttpDelete] // DELETE: https://localhost:5001/api/regions/1
-        [Route("{id:guid}")] //only if the id is a guid, the request will be performed
+        [HttpDelete]
+        [Route("{id:guid}")]
         public async Task<IActionResult> DeleteRegion(Guid id)
         {
 

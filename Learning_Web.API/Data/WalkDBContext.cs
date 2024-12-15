@@ -5,7 +5,7 @@ namespace Learning_Web.API.Data
 {
     public class WalkDBContext : DbContext
     {
-        public WalkDBContext(DbContextOptions dbContextOptions) : base(dbContextOptions)
+        public WalkDBContext(DbContextOptions<WalkDBContext> dbContextOptions) : base(dbContextOptions)
         {
             
         }

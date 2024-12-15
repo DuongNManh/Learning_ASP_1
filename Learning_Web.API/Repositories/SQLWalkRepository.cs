@@ -38,26 +38,27 @@ namespace Learning_Web.API.Repositories
             return walk;
         }
 
-        public async Task<IEnumerable<Walk>> GetAllAsync(string? filterOn = null, string? filterQuery = null
-            , string? sortBy = null, bool? isAscending = true)
+        public async Task<IEnumerable<Walk>> GetAllAsync(
+            string? filterOn = null, string? filterQuery = null, 
+            string? sortBy = null, bool? isAscending = true,
+            int pageNumber = 1, int pageSize = 50)
         {
             var query = _dBContext.Walks.Include("Difficulty").Include("Region").AsQueryable();
 
             // filter the query
+
             if (!string.IsNullOrWhiteSpace(filterOn) && !string.IsNullOrWhiteSpace(filterQuery))
             {
-                //query = query.Where(x => EF.Property<string>(x, filterOn).Contains(filterQuery));
-                if (filterOn.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                query = filterOn.ToLower() switch
                 {
-                    query = query.Where(x => x.Name.Contains(filterQuery));
-                }
-                else if (filterOn.Equals("Length", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (double.TryParse(filterQuery, out double length))
-                    {
-                        query = query.Where(x => x.LengthInKm == length);
-                    }
-                }
+                    "name" => query.Where(x => x.Name.Contains(filterQuery)),
+                    "length" => double.TryParse(filterQuery, out double length)
+                        ? query.Where(x => x.LengthInKm == length)
+                        : query,
+                    "difficulty" => query.Where(x => x.Difficulty.Name.Contains(filterQuery)),
+                    "region" => query.Where(x => x.Region.Name.Contains(filterQuery)),
+                    _ => query
+                };
             }
 
             // sort the query
@@ -77,7 +78,11 @@ namespace Learning_Web.API.Repositories
                 }
             }
 
-            return await query.ToListAsync();
+            // paginate the query
+            var skipAmount = pageSize * (pageNumber - 1); // how many records to skip
+
+            // end of the query
+            return await query.Skip(skipAmount).Take(pageSize).ToListAsync(); // now the request is ready to be sent to the database
         }
 
 

@@ -6,12 +6,14 @@ using Learning_Web.API.CustomActionFilters;
 using Learning_Web.API.Models.Domain;
 using Learning_Web.API.Repositories;
 using Learning_Web.API.Models.Response;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Learning_Web.API.Controllers
 {
     // https://localhost:5001/api/walks
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class WalksController : ControllerBase
     {
         private readonly IMapper mapper;
@@ -24,11 +26,13 @@ namespace Learning_Web.API.Controllers
         }
 
 
-        [HttpGet] // GET: https://localhost:5001/api/walks?filterOn=Name&filterQuery=Track&sortBy=Name&isAscending=true
-        public async Task<IActionResult> GetAllWalks([FromQuery] string? filterOn,
-            [FromQuery] string? filterQuery, [FromQuery] string? sortBy,[FromQuery] bool? isAscending)
+        [HttpGet] // GET: https://localhost:5001/api/walks?filterOn=Name&filterQuery=Track&sortBy=Name&isAscending=true&pageSize=10&pageNumber=1
+        public async Task<IActionResult> GetAllWalks(
+            [FromQuery] string? filterOn, [FromQuery] string? filterQuery,
+            [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
+            [FromQuery] int pageSize = 50, [FromQuery] int pageNumber = 1)
         {
-            return Ok(mapper.Map<IEnumerable<WalkResponse>>(await walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true)));
+            return Ok(mapper.Map<IEnumerable<WalkResponse>>(await walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true, pageNumber, pageSize)));
         }
 
         [HttpGet]

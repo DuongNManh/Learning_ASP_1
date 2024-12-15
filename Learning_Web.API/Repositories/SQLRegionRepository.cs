@@ -36,37 +36,43 @@ namespace Learning_Web.API.Repositories
             return region;
         }
 
-        public async Task<IEnumerable<Region>> GetAllAsync(string? filterOn,string? filterQuery,
-            string? sortBy, bool? isAscending)
+        public async Task<IEnumerable<Region>> GetAllAsync(
+            string? filterOn = null, string? filterQuery = null,
+            string? sortBy = null, bool? isAscending = true,
+            int pageNumber = 1, int pageSize = 50)
         {
-            var query = await _dbContext.Regions.ToListAsync();
+            var query = _dbContext.Regions.AsQueryable();
+
             // filter the query
             if (!string.IsNullOrWhiteSpace(filterOn) && !string.IsNullOrWhiteSpace(filterQuery))
             {
-                // filter the query on Name
                 if (filterOn.Equals("Name", StringComparison.OrdinalIgnoreCase))
                 {
-                    query = query.Where(x => x.Name.Contains(filterQuery)).ToList();
+                    query = query.Where(x => x.Name.Contains(filterQuery));
                 }
-                // filter the query on Code
                 else if (filterOn.Equals("Code", StringComparison.OrdinalIgnoreCase))
                 {
-                    query = query.Where(x => x.Code.Contains(filterQuery)).ToList();
+                    query = query.Where(x => x.Code.Contains(filterQuery));
                 }
             }
+
             // sort the query
             if (!string.IsNullOrWhiteSpace(sortBy))
             {
                 if (sortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
                 {
-                    query = isAscending == true ? query.OrderBy(x => x.Name).ToList() : query.OrderByDescending(x => x.Name).ToList();
+                    query = isAscending == true ? query.OrderBy(x => x.Name) : query.OrderByDescending(x => x.Name);
                 }
                 else if (sortBy.Equals("Code", StringComparison.OrdinalIgnoreCase))
                 {
-                    query = isAscending == true ? query.OrderBy(x => x.Code).ToList() : query.OrderByDescending(x => x.Code).ToList();
+                    query = isAscending == true ? query.OrderBy(x => x.Code) : query.OrderByDescending(x => x.Code);
                 }
             }
-            return query;
+
+            // paginate the query
+            var skipAmount = (pageNumber - 1) * pageSize;
+
+            return await query.Skip(skipAmount).Take(pageSize).ToListAsync();
         }
 
         public async Task<Region?> GetByIdAsync(Guid id)
