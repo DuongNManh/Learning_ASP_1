@@ -9,10 +9,20 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+// Configure Serilog
+var logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .MinimumLevel.Information()
+    .CreateLogger();
+
+builder.Logging.ClearProviders(); // Remove the default logging providers
+builder.Logging.AddSerilog(logger); // Add Serilog as the logging provider
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();

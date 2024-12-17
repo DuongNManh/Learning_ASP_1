@@ -15,13 +15,13 @@ namespace Learning_Web.API.Controllers
     [ApiController]
     public class WalksController : ControllerBase
     {
-        private readonly IMapper mapper;
-        private readonly IWalkRepository walkRepository;
+        private readonly IMapper _mapper;
+        private readonly IWalkRepository _walkRepository;
 
         public WalksController(IMapper mapper, IWalkRepository walkRepository)
         {
-            this.mapper = mapper;
-            this.walkRepository = walkRepository;
+            _mapper = mapper;
+            _walkRepository = walkRepository;
         }
 
 
@@ -32,7 +32,7 @@ namespace Learning_Web.API.Controllers
             [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
             [FromQuery] int pageSize = 50, [FromQuery] int pageNumber = 1)
         {
-            return Ok(mapper.Map<IEnumerable<WalkResponse>>(await walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true, pageNumber, pageSize)));
+            return Ok(_mapper.Map<IEnumerable<WalkResponse>>(await _walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true, pageNumber, pageSize)));
         }
 
         [HttpGet]
@@ -40,12 +40,12 @@ namespace Learning_Web.API.Controllers
         [Authorize(Roles = "reader,writer")]
         public async Task<IActionResult> GetWalk(Guid id)
         {
-            var walk = await walkRepository.GetByIdAsync(id);
+            var walk = await _walkRepository.GetByIdAsync(id);
             if (walk == null)
             {
                 return NotFound();
             }
-            return Ok(mapper.Map<WalkResponse>(walk));
+            return Ok(_mapper.Map<WalkResponse>(walk));
         }
 
         [HttpPost]
@@ -54,9 +54,9 @@ namespace Learning_Web.API.Controllers
         public async Task<IActionResult> CreateWalk([FromBody] WalkDTO walkDTO)
         {
             // Map the WalkDTO to a Walk and create the walk
-            var createdWalk = await walkRepository.CreateAsync(mapper.Map<Walk>(walkDTO));
+            var createdWalk = await _walkRepository.CreateAsync(_mapper.Map<Walk>(walkDTO));
 
-            return CreatedAtAction(nameof(GetWalk), new { id = createdWalk.Id }, mapper.Map<WalkResponse>(createdWalk));
+            return CreatedAtAction(nameof(GetWalk), new { id = createdWalk.Id }, _mapper.Map<WalkResponse>(createdWalk));
 
         }
 
@@ -66,14 +66,14 @@ namespace Learning_Web.API.Controllers
         [ValidateModelAttributes]
         public async Task<IActionResult> UpdateWalk(Guid id, WalkDTO walkDTO)
         {
-            var walkUpdated = await walkRepository.UpdateAsync(id, mapper.Map<Walk>(walkDTO));
+            var walkUpdated = await _walkRepository.UpdateAsync(id, _mapper.Map<Walk>(walkDTO));
 
             if (walkUpdated == null)
             {
                 return NotFound();
             }
 
-            return Ok(mapper.Map<WalkResponse>(walkUpdated));
+            return Ok(_mapper.Map<WalkResponse>(walkUpdated));
         }
 
         [HttpDelete]
@@ -81,7 +81,7 @@ namespace Learning_Web.API.Controllers
         [Route("{id:guid}")]
         public async Task<IActionResult> DeleteWalk(Guid id)
         {
-            var walkToDelete = await walkRepository.DeleteAsync(id);
+            var walkToDelete = await _walkRepository.DeleteAsync(id);
             if (walkToDelete == null)
             {
                 return NotFound();

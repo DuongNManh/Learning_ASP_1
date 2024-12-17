@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Learning_Web.API.Models.Domain;
 using Learning_Web.API.Data;
@@ -18,30 +19,41 @@ namespace Learning_Web.API.Controllers
     [ApiController]
     public class RegionsController : ControllerBase
     {
-        private readonly IRegionRepository regionRepository;
-        private readonly IMapper mapper;
+        private readonly IRegionRepository _regionRepository;
+        private readonly IMapper _mapper;
+        private readonly ILogger<RegionsController> _logger;
 
         public RegionsController(IRegionRepository regionRepository
-            , IMapper mapper)
+            , IMapper mapper, ILogger<RegionsController> logger)
         {
-            this.regionRepository = regionRepository;
-            this.mapper = mapper;
+            _regionRepository = regionRepository;
+            _mapper = mapper;
+            _logger = logger;
         }
 
         [HttpGet] // GET: https://localhost:5001/api/regions?filterOn=Name&filterQuery=Track&sortBy=Name&isAscending=true&pageSize=10&pageNumber=1
-        [Authorize(Roles = "reader,writer")]
+        //[Authorize(Roles = "reader,writer")]
         public async Task<IActionResult> GetAllRegions(
             [FromQuery] string? filterOn, [FromQuery] string? filterQuery,
             [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
             [FromQuery] int pageSize = 50, [FromQuery] int pageNumber = 1)
         {
-            // Get all regions
-            var regions = await regionRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true, pageNumber, pageSize);
+            try
+            {
+                _logger.LogInformation("Get all regions was invoked");
+                // Get all regions
+                var regions = await _regionRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true,
+                    pageNumber, pageSize);
+                _logger.LogInformation($"Get all regions finished with data: {JsonSerializer.Serialize(regions)}");
 
-            // Convert each Region to RegionResponse
-            var regionResponses = mapper.Map<IEnumerable<RegionResponse>>(regions);
-
-            return Ok(regionResponses);
+                // Convert each Region to RegionResponse and return the list
+                return Ok(_mapper.Map<IEnumerable<RegionResponse>>(regions));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         [HttpGet]
@@ -49,9 +61,8 @@ namespace Learning_Web.API.Controllers
         [Authorize(Roles = "reader,writer")]
         public async Task<IActionResult> GetRegion(Guid id)
         {
-            //var region = await _dbContext.Regions.FindAsync(id);
 
-            var region = await regionRepository.GetByIdAsync(id);
+            var region = await _regionRepository.GetByIdAsync(id);
 
             if (region == null)
             {
@@ -59,7 +70,7 @@ namespace Learning_Web.API.Controllers
             }
 
             // change the region to a RegionResponse
-            return Ok(mapper.Map<RegionResponse>(region));
+            return Ok(_mapper.Map<RegionResponse>(region));
         }
 
         [HttpPost]
@@ -74,13 +85,13 @@ namespace Learning_Web.API.Controllers
             }
 
             //Convert the RegionDTO to a Region
-            var regionToCreate = mapper.Map<Region>(newRegion);
+            var regionToCreate = _mapper.Map<Region>(newRegion);
 
             //Create the region
-            var createdRegion = await regionRepository.CreateAsync(regionToCreate);
+            var createdRegion = await _regionRepository.CreateAsync(regionToCreate);
 
             //Return the created region
-            return CreatedAtAction(nameof(GetRegion), new { id = regionToCreate.Id }, mapper.Map<RegionResponse>(createdRegion));
+            return CreatedAtAction(nameof(GetRegion), new { id = regionToCreate.Id }, _mapper.Map<RegionResponse>(createdRegion));
         }
 
         [HttpPut]
@@ -95,14 +106,14 @@ namespace Learning_Web.API.Controllers
                 return BadRequest("Invalid data");
             }
 
-            var regionToUpdate = await regionRepository.UpdateAsync(id, mapper.Map<Region>(updateRegion));
+            var regionToUpdate = await _regionRepository.UpdateAsync(id, _mapper.Map<Region>(updateRegion));
 
             if (regionToUpdate == null)
             {
                 return NotFound();
             }
 
-            return Ok(mapper.Map<RegionResponse>(regionToUpdate));
+            return Ok(_mapper.Map<RegionResponse>(regionToUpdate));
         }
 
         [HttpDelete]
@@ -111,7 +122,7 @@ namespace Learning_Web.API.Controllers
         public async Task<IActionResult> DeleteRegion(Guid id)
         {
 
-            var regionToDelete = await regionRepository.DeleteAsync(id);
+            var regionToDelete = await _regionRepository.DeleteAsync(id);
 
             if (regionToDelete == null)
             {
