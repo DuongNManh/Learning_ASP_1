@@ -19,6 +19,11 @@ namespace Learning_Web.API.Converters
             CreateMap<Region, RegionResponse>().ReverseMap();
             CreateMap<Walk, WalkResponse>().ReverseMap();
             CreateMap<Difficulty, DifficultyResponse>().ReverseMap();
+            CreateMap<ImageDTO, Image>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.FileExtension, opt => opt.MapFrom(src => Path.GetExtension(src.File.FileName)))
+                .ForMember(dest => dest.FileSize, opt => opt.MapFrom(src => src.File.Length));
+
         }
     }
 }
