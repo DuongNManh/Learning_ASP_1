@@ -4,36 +4,20 @@ using Microsoft.EntityFrameworkCore;
 using Learning_Web.API.Converters;
 using Learning_Web.API.Models.Response;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using Learning_Web.API.Exceptions;
 
 namespace Learning_Web.API.Repositories
 {
     public class SQLRegionRepository : IRegionRepository
     {
         private readonly WalkDBContext _dbContext;
+        private readonly ILogger<SQLRegionRepository> _logger;
 
-        public SQLRegionRepository(WalkDBContext dbContext)
+        public SQLRegionRepository(WalkDBContext dbContext, ILogger<SQLRegionRepository> logger)
         {
             _dbContext = dbContext;
-        }
-
-        public async Task<Region> CreateAsync(Region region)
-        {
-            await _dbContext.Regions.AddAsync(region);
-            await _dbContext.SaveChangesAsync();
-            return region;
-        }
-
-        public async Task<Region?> DeleteAsync(Guid id)
-        {
-            var region = await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
-            if (region == null)
-            {
-                return null;
-            }
-
-            _dbContext.Regions.Remove(region);
-            await _dbContext.SaveChangesAsync();
-            return region;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Region>> GetAllAsync(
@@ -41,60 +25,136 @@ namespace Learning_Web.API.Repositories
             string? sortBy = null, bool? isAscending = true,
             int pageNumber = 1, int pageSize = 50)
         {
-            var query = _dbContext.Regions.AsQueryable();
-
-            // filter the query
-            if (!string.IsNullOrWhiteSpace(filterOn) && !string.IsNullOrWhiteSpace(filterQuery))
+            try
             {
-                if (filterOn.Equals("Name", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = query.Where(x => x.Name.Contains(filterQuery));
-                }
-                else if (filterOn.Equals("Code", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = query.Where(x => x.Code.Contains(filterQuery));
-                }
-            }
+                var query = _dbContext.Regions.AsQueryable();
 
-            // sort the query
-            if (!string.IsNullOrWhiteSpace(sortBy))
+                // filter the query
+                if (!string.IsNullOrWhiteSpace(filterOn) && !string.IsNullOrWhiteSpace(filterQuery))
+                {
+                    if (filterOn.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                    {
+                        query = query.Where(x => x.Name.Contains(filterQuery));
+                    }
+                    else if (filterOn.Equals("Code", StringComparison.OrdinalIgnoreCase))
+                    {
+                        query = query.Where(x => x.Code.Contains(filterQuery));
+                    }
+                }
+
+                // sort the query
+                if (!string.IsNullOrWhiteSpace(sortBy))
+                {
+                    if (sortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                    {
+                        query = isAscending == true ? query.OrderBy(x => x.Name) : query.OrderByDescending(x => x.Name);
+                    }
+                    else if (sortBy.Equals("Code", StringComparison.OrdinalIgnoreCase))
+                    {
+                        query = isAscending == true ? query.OrderBy(x => x.Code) : query.OrderByDescending(x => x.Code);
+                    }
+                }
+
+                // paginate the query
+                var skipAmount = (pageNumber - 1) * pageSize;
+
+                return await query.Skip(skipAmount).Take(pageSize).ToListAsync();
+            }
+            catch (Exception ex)
             {
-                if (sortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = isAscending == true ? query.OrderBy(x => x.Name) : query.OrderByDescending(x => x.Name);
-                }
-                else if (sortBy.Equals("Code", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = isAscending == true ? query.OrderBy(x => x.Code) : query.OrderByDescending(x => x.Code);
-                }
+                _logger.LogError(ex, "Error occurred while retrieving all regions");
+                throw new ApiException("Failed to retrieve regions", HttpStatusCode.InternalServerError);
             }
-
-            // paginate the query
-            var skipAmount = (pageNumber - 1) * pageSize;
-
-            return await query.Skip(skipAmount).Take(pageSize).ToListAsync();
         }
 
         public async Task<Region?> GetByIdAsync(Guid id)
         {
-            return await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
+            try
+            {
+                var region = await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
+                if (region == null)
+                {
+                    throw new NotFoundException($"Region with ID {id} was not found");
+                }
+                return region;
+            }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving region by ID");
+                throw new ApiException("Failed to retrieve region", HttpStatusCode.InternalServerError);
+            }
+        }
+
+        public async Task<Region> CreateAsync(Region region)
+        {
+            try
+            {
+                await _dbContext.Regions.AddAsync(region);
+                await _dbContext.SaveChangesAsync();
+                return region;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating region");
+                throw new ApiException("Failed to create region", HttpStatusCode.InternalServerError);
+            }
         }
 
         public async Task<Region?> UpdateAsync(Guid id, Region region)
         {
-            var regionToUpdate = await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
-            
-            if (regionToUpdate == null)
+            try
             {
-                return null;
+                var existingRegion = await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
+                if (existingRegion == null)
+                {
+                    throw new NotFoundException($"Region with ID {id} was not found");
+                }
+
+                existingRegion.Name = region.Name;
+                existingRegion.Code = region.Code;
+                existingRegion.RegionImageUrl = region.RegionImageUrl;
+
+                await _dbContext.SaveChangesAsync();
+                return existingRegion;
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating region");
+                throw new ApiException("Failed to update region", HttpStatusCode.InternalServerError);
+            }
+        }
 
-            regionToUpdate.Name = region.Name;
-            regionToUpdate.Code = region.Code;
-            regionToUpdate.RegionImageUrl = region.RegionImageUrl;
+        public async Task<Region?> DeleteAsync(Guid id)
+        {
+            try
+            {
+                var region = await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
+                if (region == null)
+                {
+                    throw new NotFoundException($"Region with ID {id} was not found");
+                }
 
-            await _dbContext.SaveChangesAsync();
-            return regionToUpdate;
+                _dbContext.Regions.Remove(region);
+                await _dbContext.SaveChangesAsync();
+                return region;
+            }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting region");
+                throw new ApiException("Failed to delete region", HttpStatusCode.InternalServerError);
+            }
         }
     }
 }

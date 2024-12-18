@@ -58,7 +58,7 @@ namespace Learning_Web.API.Controllers
 
         [HttpGet]
         [Route("{id:guid}")] //only if the id is a guid, the request will be performed
-        [Authorize(Roles = "reader,writer")]
+        //[Authorize(Roles = "reader,writer")]
         public async Task<IActionResult> GetRegion(Guid id)
         {
 
@@ -75,7 +75,7 @@ namespace Learning_Web.API.Controllers
 
         [HttpPost]
         [ValidateModelAttributes] // Custom Action Filter for Model Validation
-        [Authorize(Roles = "writer")]
+        //[Authorize(Roles = "writer")]
         public async Task<IActionResult> CreateRegion([FromBody] RegionDTO newRegion)
         {
             // validate the DTO
@@ -95,7 +95,7 @@ namespace Learning_Web.API.Controllers
         }
 
         [HttpPut]
-        [Authorize(Roles = "writer")]
+        //[Authorize(Roles = "writer")]
         [Route("{id:guid}")]
         [ValidateModelAttributes]
         public async Task<IActionResult> UpdateRegion(Guid id, [FromBody] RegionDTO updateRegion)
@@ -118,7 +118,7 @@ namespace Learning_Web.API.Controllers
 
         [HttpDelete]
         [Route("{id:guid}")]
-        [Authorize(Roles = "writer")]
+        //[Authorize(Roles = "writer")]
         public async Task<IActionResult> DeleteRegion(Guid id)
         {
 

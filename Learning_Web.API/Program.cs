@@ -1,6 +1,7 @@
 using System.Text;
 using Learning_Web.API.Converters;
 using Learning_Web.API.Data;
+using Learning_Web.API.Middlewares;
 using Learning_Web.API.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -121,6 +122,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Add the ExceptionHandlerMiddleware to the pipeline
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.UseHttpsRedirection();
 

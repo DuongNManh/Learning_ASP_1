@@ -26,7 +26,7 @@ namespace Learning_Web.API.Controllers
 
 
         [HttpGet] // GET: https://localhost:5001/api/walks?filterOn=Name&filterQuery=Track&sortBy=Name&isAscending=true&pageSize=10&pageNumber=1
-        [Authorize(Roles = "reader,writer")]
+        //[Authorize(Roles = "reader,writer")]
         public async Task<IActionResult> GetAllWalks(
             [FromQuery] string? filterOn, [FromQuery] string? filterQuery,
             [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
@@ -37,7 +37,7 @@ namespace Learning_Web.API.Controllers
 
         [HttpGet]
         [Route("{id:guid}")]
-        [Authorize(Roles = "reader,writer")]
+        //[Authorize(Roles = "reader,writer")]
         public async Task<IActionResult> GetWalk(Guid id)
         {
             var walk = await _walkRepository.GetByIdAsync(id);
@@ -50,7 +50,7 @@ namespace Learning_Web.API.Controllers
 
         [HttpPost]
         [ValidateModelAttributes]
-        [Authorize(Roles = "writer")]
+        //[Authorize(Roles = "writer")]
         public async Task<IActionResult> CreateWalk([FromBody] WalkDTO walkDTO)
         {
             // Map the WalkDTO to a Walk and create the walk
@@ -61,7 +61,7 @@ namespace Learning_Web.API.Controllers
         }
 
         [HttpPut]
-        [Authorize]
+        //[Authorize(Roles = "writer")]
         [Route("{id:guid}")]
         [ValidateModelAttributes]
         public async Task<IActionResult> UpdateWalk(Guid id, WalkDTO walkDTO)
@@ -77,7 +77,7 @@ namespace Learning_Web.API.Controllers
         }
 
         [HttpDelete]
-        [Authorize(Roles = "writer")]
+        //[Authorize(Roles = "writer")]
         [Route("{id:guid}")]
         public async Task<IActionResult> DeleteWalk(Guid id)
         {
