@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Learning_Web.API.Exceptions;
+using Learning_Web.API.Models.Response;
 
 namespace Learning_Web.API.Middlewares
 {
@@ -51,13 +52,20 @@ namespace Learning_Web.API.Middlewares
         private async Task HandleExceptionAsync(HttpContext context, string errorId, Exception exception)
         {
             var statusCode = GetStatusCode(exception);
-            var response = new ApiErrorResponse
+            var message = GetMessage(exception);
+            var reason = _environment.IsDevelopment() ? exception.StackTrace : "Internal Server Error";
+
+            var response = new ApiResponse<object>
             {
-                Id = errorId,
                 StatusCode = (int)statusCode,
-                Message = GetMessage(exception),
-                Details = _environment.IsDevelopment() ? exception.StackTrace : null,
-                Timestamp = DateTime.UtcNow
+                Message = message,
+                Reason = reason,
+                IsSuccess = false,
+                Data = new
+                {
+                    ErrorId = errorId,
+                    Timestamp = DateTime.UtcNow
+                }
             };
 
             context.Response.ContentType = "application/json";
@@ -71,7 +79,11 @@ namespace Learning_Web.API.Middlewares
             return exception switch
             {
                 ApiException apiException => apiException.Message,
-                _ => "An unexpected error occurred."
+                UnauthorizedAccessException => "Unauthorized access",
+                KeyNotFoundException => "Resource not found",
+                ArgumentException => "Invalid argument provided",
+                InvalidOperationException => "Invalid operation",
+                _ => "An unexpected error occurred"
             };
         }
 

@@ -4,6 +4,7 @@ using Learning_Web.API.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using Learning_Web.API.CustomActionFilters;
 using Learning_Web.API.Exceptions;
 
 namespace Learning_Web.API.Controllers
@@ -25,96 +26,63 @@ namespace Learning_Web.API.Controllers
 
         // POST: api/Auth/register
         [HttpPost("register")]
+        [ValidateModelAttributes]
         public async Task<IActionResult> Register([FromBody] RegisterDTO registerDTO)
         {
-            try
+            var identityUser = new IdentityUser
             {
-                if (!ModelState.IsValid)
-                {
-                    throw new BadRequestException("Invalid registration data");
-                }
+                UserName = registerDTO.Username,
+                Email = registerDTO.Username
+            };
 
-                var identityUser = new IdentityUser
-                {
-                    UserName = registerDTO.Username,
-                    Email = registerDTO.Username
-                };
-
-                var result = await _userManager.CreateAsync(identityUser, registerDTO.Password);
-                if (!result.Succeeded)
-                {
-                    throw new BadRequestException(string.Join(", ", result.Errors.Select(e => e.Description)));
-                }
-
-                if (registerDTO.Roles?.Any() == true)
-                {
-                    var roleResult = await _userManager.AddToRolesAsync(identityUser, registerDTO.Roles);
-                    if (!roleResult.Succeeded)
-                    {
-                        throw new ApiException("User was registered but roles could not be assigned", HttpStatusCode.PartialContent);
-                    }
-                }
-
-                return Ok("User was registered successfully");
-            }
-            catch (BadRequestException)
+            var result = await _userManager.CreateAsync(identityUser, registerDTO.Password);
+            if (!result.Succeeded)
             {
-                throw;
+                throw new BadRequestException(string.Join(", ", result.Errors.Select(e => e.Description)));
             }
-            catch (Exception ex)
+
+            if (registerDTO.Roles?.Any() == true)
             {
-                _logger.LogError(ex, "Error occurred during user registration");
-                throw new ApiException("Registration failed", HttpStatusCode.InternalServerError);
+                var roleResult = await _userManager.AddToRolesAsync(identityUser, registerDTO.Roles);
+                if (!roleResult.Succeeded)
+                {
+                    throw new ApiException("User was registered but roles could not be assigned", HttpStatusCode.PartialContent);
+                }
             }
+
+            return Ok("User was registered successfully");
         }
 
         // POST: api/Auth/login
         [HttpPost("login")]
+        [ValidateModelAttributes]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginDTO)
         {
-            try
+            var user = await _userManager.FindByEmailAsync(loginDTO.Username);
+            if (user == null)
             {
-                if (!ModelState.IsValid)
-                {
-                    throw new BadRequestException("Invalid login credentials");
-                }
-
-                var user = await _userManager.FindByEmailAsync(loginDTO.Username);
-                if (user == null)
-                {
-                    throw new UnauthorizedException("Invalid credentials");
-                }
-
-                var validPassword = await _userManager.CheckPasswordAsync(user, loginDTO.Password);
-                if (!validPassword)
-                {
-                    throw new UnauthorizedException("Invalid credentials");
-                }
-
-                var roles = await _userManager.GetRolesAsync(user);
-                var token = await _tokenRepository.GenerateToken(user, roles.ToList());
-                // return the response with token
-                LoginResponse response = new LoginResponse
-                {
-                    Token = token,
-                    RefreshToken = "",
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    Roles = roles.ToArray()
-                };
-
-                return Ok(response);
+                throw new UnauthorizedException("Invalid credentials");
             }
-            catch (UnauthorizedException)
+
+            var validPassword = await _userManager.CheckPasswordAsync(user, loginDTO.Password);
+            if (!validPassword)
             {
-                throw;
+                throw new UnauthorizedException("Invalid credentials");
             }
-            catch (Exception ex)
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = await _tokenRepository.GenerateToken(user, roles.ToList());
+            // return the response with token
+            LoginResponse response = new LoginResponse
             {
-                _logger.LogError(ex, "Error occurred during login");
-                throw new ApiException("Login failed", HttpStatusCode.InternalServerError);
-            }
+                Token = token,
+                RefreshToken = "",
+                UserName = user.UserName,
+                Email = user.Email,
+                Roles = roles.ToArray()
+            };
+
+            return Ok(response);
         }
-
     }
 }
