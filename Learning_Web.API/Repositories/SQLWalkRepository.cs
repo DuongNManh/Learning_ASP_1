@@ -4,6 +4,8 @@ using Learning_Web.API.Models.Domain;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using Learning_Web.API.Exceptions;
+using Learning_Web.API.Models.Response;
+using Learning_Web.API.Models;
 
 namespace Learning_Web.API.Repositories
 {
@@ -33,7 +35,7 @@ namespace Learning_Web.API.Repositories
             }
         }
 
-        public async Task<IEnumerable<Walk>> GetAllAsync(
+        public async Task<PageResponse<Walk>> GetAllAsync(
             string? filterOn = null, string? filterQuery = null,
             string? sortBy = null, bool? isAscending = true,
             int pageNumber = 1, int pageSize = 50)
@@ -74,11 +76,22 @@ namespace Learning_Web.API.Repositories
                     }
                 }
 
-                // paginate the query
-                var skipAmount = pageSize * (pageNumber - 1); // how many records to skip
+                var totalItems = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+                var skipAmount = (pageNumber - 1) * pageSize;
+                var items = await query.Skip(skipAmount).Take(pageSize).ToListAsync();
 
-                // end of the query
-                return await query.Skip(skipAmount).Take(pageSize).ToListAsync(); // now the request is ready to be sent to the database
+                return new PageResponse<Walk>
+                {
+                    Items = items,
+                    Meta = new PaginationMeta
+                    {
+                        CurrentPage = pageNumber,
+                        PageSize = pageSize,
+                        TotalItems = totalItems,
+                        TotalPages = totalPages
+                    }
+                };
             }
             catch (Exception ex)
             {

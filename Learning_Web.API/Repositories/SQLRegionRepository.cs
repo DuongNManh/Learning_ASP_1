@@ -6,6 +6,7 @@ using Learning_Web.API.Models.Response;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using Learning_Web.API.Exceptions;
+using Learning_Web.API.Models;
 
 namespace Learning_Web.API.Repositories
 {
@@ -20,7 +21,7 @@ namespace Learning_Web.API.Repositories
             _logger = logger;
         }
 
-        public async Task<IEnumerable<Region>> GetAllAsync(
+        public async Task<PageResponse<Region>> GetAllAsync(
             string? filterOn = null, string? filterQuery = null,
             string? sortBy = null, bool? isAscending = true,
             int pageNumber = 1, int pageSize = 50)
@@ -56,9 +57,22 @@ namespace Learning_Web.API.Repositories
                 }
 
                 // paginate the query
+                var totalItems = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
                 var skipAmount = (pageNumber - 1) * pageSize;
+                var items = await query.Skip(skipAmount).Take(pageSize).ToListAsync();
 
-                return await query.Skip(skipAmount).Take(pageSize).ToListAsync();
+                return new PageResponse<Region>
+                {
+                    Items = items,
+                    Meta = new PaginationMeta
+                    {
+                        CurrentPage = pageNumber,
+                        PageSize = pageSize,
+                        TotalItems = totalItems,
+                        TotalPages = totalPages
+                    }
+                };
             }
             catch (Exception ex)
             {

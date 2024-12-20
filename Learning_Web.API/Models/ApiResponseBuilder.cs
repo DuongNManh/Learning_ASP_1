@@ -28,7 +28,7 @@ namespace Learning_Web.API.Models
             };
         }
 
-        public static ApiResponse<IEnumerable<T>> BuildPageResponse<T>(
+        public static ApiResponse<PageResponse<T>> BuildPageResponse<T>(
             IEnumerable<T> items,
             int totalPages,
             int currentPage,
@@ -36,17 +36,21 @@ namespace Learning_Web.API.Models
             long totalItems,
             string message)
         {
-            var paginationMeta = new PaginationMeta
+            var pagedResponse = new PageResponse<T>
             {
-                TotalPages = totalPages,
-                CurrentPage = currentPage,
-                PageSize = pageSize,
-                TotalItems = totalItems
+                Items = items,
+                Meta = new PaginationMeta
+                {
+                    TotalPages = totalPages,
+                    CurrentPage = currentPage,
+                    PageSize = pageSize,
+                    TotalItems = totalItems
+                }
             };
 
-            return new ApiResponse<IEnumerable<T>>
+            return new ApiResponse<PageResponse<T>>
             {
-                Data = items,
+                Data = pagedResponse,
                 Message = message,
                 StatusCode = 200,
                 IsSuccess = true,

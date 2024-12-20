@@ -39,14 +39,19 @@ namespace Learning_Web.API.Controllers
             [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
             [FromQuery] int pageSize = 50, [FromQuery] int pageNumber = 1)
         {
-            // Get all regions
-            var regions = await _regionRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true,
+            var paginatedResult = await _regionRepository.GetAllAsync(
+                filterOn, filterQuery, sortBy, isAscending ?? true,
                 pageNumber, pageSize);
-            var response = ApiResponseBuilder.BuildResponse(
-                _mapper.Map<IEnumerable<RegionResponse>>(regions),
-                "Regions retrieved successfully",
-                200
+
+            var response = ApiResponseBuilder.BuildPageResponse(
+                _mapper.Map<IEnumerable<RegionResponse>>(paginatedResult.Items),
+                paginatedResult.Meta.TotalPages,
+                paginatedResult.Meta.CurrentPage,
+                paginatedResult.Meta.PageSize,
+                paginatedResult.Meta.TotalItems,
+                "Regions retrieved successfully"
             );
+
             return Ok(response);
         }
 
@@ -58,8 +63,7 @@ namespace Learning_Web.API.Controllers
             var region = await _regionRepository.GetByIdAsync(id);
             var response = ApiResponseBuilder.BuildResponse(
                 _mapper.Map<RegionResponse>(region),
-                "Region retrieved successfully",
-                200
+                "Region retrieved successfully"
             );
             return Ok(response);
         }

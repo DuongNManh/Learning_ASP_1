@@ -7,7 +7,7 @@ namespace Learning_Web.API.Repositories
 {
     public interface IRegionRepository
     {
-        Task<IEnumerable<Region>> GetAllAsync(
+        Task<PageResponse<Region>> GetAllAsync(
             string? filterOn = null, string? filterQuery = null,
             string? sortBy = null, bool? isAscending = true,
             int pageNumber = 1, int pageSize = 50);

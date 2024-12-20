@@ -35,13 +35,18 @@ namespace Learning_Web.API.Controllers
             [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
             [FromQuery] int pageSize = 50, [FromQuery] int pageNumber = 1)
         {
-            var walks = await _walkRepository.GetAllAsync(
+            var paginatedResult = await _walkRepository.GetAllAsync(
                 filterOn, filterQuery, sortBy,
                 isAscending ?? true, pageNumber, pageSize);
 
-            var response = ApiResponseBuilder.BuildResponse(
-                _mapper.Map<IEnumerable<WalkResponse>>(walks),
-                "Walks retrieved successfully");
+            var response = ApiResponseBuilder.BuildPageResponse(
+                _mapper.Map<IEnumerable<WalkResponse>>(paginatedResult.Items),
+                paginatedResult.Meta.TotalPages,
+                paginatedResult.Meta.CurrentPage,
+                paginatedResult.Meta.PageSize,
+                paginatedResult.Meta.TotalItems,
+                "Walks retrieved successfully"
+            );
 
             return Ok(response);
         }
