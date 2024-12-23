@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using Learning_Web.API.Models;
 using Learning_Web.API.Models.Response;
+using Learning_Web.API.Models.Domain;
+using Microsoft.AspNetCore.Http;
 
 namespace Learning_Web.API.CustomActionFilters
 {
@@ -29,14 +31,12 @@ namespace Learning_Web.API.CustomActionFilters
                     }
                 }
 
-                var response = new ApiResponse<object>
-                {
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    Message = "Validation failed",
-                    Reason = "One or more validation errors occurred",
-                    IsSuccess = false,
-                    Data = errors
-                };
+                var response = ApiResponseBuilder.BuildErrorResponse(
+                    data: errors,
+                    message: "Validation failed",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    reason: "One or more validation errors occurred"
+                    );
 
                 context.Result = new BadRequestObjectResult(response);
             }

@@ -16,11 +16,11 @@ namespace Learning_Web.API.Models
             };
         }
 
-        public static ApiResponse<T> BuildErrorResponse<T>(string message, string reason, int statusCode)
+        public static ApiResponse<T> BuildErrorResponse<T>(T data, string message, string reason, int statusCode)
         {
             return new ApiResponse<T>
             {
-                Data = default,
+                Data = data,
                 Message = message,
                 StatusCode = statusCode,
                 IsSuccess = false,
